@@ -171,7 +171,8 @@ pub struct Stash<P: StashProvider> {
 }
 
 impl<P: StashProvider> Default for Stash<P>
-where P: Default
+where
+    P: Default,
 {
     fn default() -> Self {
         Self {
@@ -181,10 +182,14 @@ where P: Default
 }
 
 impl<P: StashProvider> Stash<P> {
-    pub(super) fn new(provider: P) -> Self { Self { provider } }
+    pub(super) fn new(provider: P) -> Self {
+        Self { provider }
+    }
 
     #[doc(hidden)]
-    pub fn as_provider(&self) -> &P { &self.provider }
+    pub fn as_provider(&self) -> &P {
+        &self.provider
+    }
 
     pub(super) fn ifaces(
         &self,
@@ -614,7 +619,7 @@ pub trait StashWriteProvider {
     fn replace_bundle(&mut self, bundle: TransitionBundle) -> Result<bool, Self::Error>;
     fn replace_witness(&mut self, witness: SealWitness) -> Result<bool, Self::Error>;
     fn replace_attachment(&mut self, id: AttachId, attach: MediumBlob)
-    -> Result<bool, Self::Error>;
+        -> Result<bool, Self::Error>;
 
     fn replace_lib(&mut self, lib: Lib) -> Result<bool, Self::Error>;
     fn consume_types(&mut self, types: TypeSystem) -> Result<(), Self::Error>;

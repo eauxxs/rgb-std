@@ -74,7 +74,9 @@ pub struct ConsignmentId(
 );
 
 impl From<Sha256> for ConsignmentId {
-    fn from(hasher: Sha256) -> Self { hasher.finish().into() }
+    fn from(hasher: Sha256) -> Self {
+        hasher.finish().into()
+    }
 }
 
 impl CommitmentId for ConsignmentId {
@@ -84,8 +86,12 @@ impl CommitmentId for ConsignmentId {
 impl ToBaid58<32> for ConsignmentId {
     const HRI: &'static str = "con";
     const CHUNKING: Option<Chunking> = CHUNKING_32;
-    fn to_baid58_payload(&self) -> [u8; 32] { self.to_byte_array() }
-    fn to_baid58_string(&self) -> String { self.to_string() }
+    fn to_baid58_payload(&self) -> [u8; 32] {
+        self.to_byte_array()
+    }
+    fn to_baid58_string(&self) -> String {
+        self.to_string()
+    }
 }
 impl FromBaid58<32> for ConsignmentId {}
 impl Display for ConsignmentId {
@@ -107,8 +113,12 @@ impl FromStr for ConsignmentId {
     }
 }
 impl ConsignmentId {
-    pub const fn from_array(id: [u8; 32]) -> Self { Self(Bytes32::from_array(id)) }
-    pub fn to_mnemonic(&self) -> String { self.to_baid58().mnemonic() }
+    pub const fn from_array(id: [u8; 32]) -> Self {
+        Self(Bytes32::from_array(id))
+    }
+    pub fn to_mnemonic(&self) -> String {
+        self.to_baid58().mnemonic()
+    }
 }
 
 pub type ValidContract = ValidConsignment<false>;
@@ -123,11 +133,17 @@ pub struct ValidConsignment<const TRANSFER: bool> {
 }
 
 impl<const TRANSFER: bool> ValidConsignment<TRANSFER> {
-    pub fn validation_status(&self) -> &validation::Status { &self.validation_status }
+    pub fn validation_status(&self) -> &validation::Status {
+        &self.validation_status
+    }
 
-    pub fn into_consignment(self) -> Consignment<TRANSFER> { self.consignment }
+    pub fn into_consignment(self) -> Consignment<TRANSFER> {
+        self.consignment
+    }
 
-    pub fn into_validation_status(self) -> validation::Status { self.validation_status }
+    pub fn into_validation_status(self) -> validation::Status {
+        self.validation_status
+    }
 
     pub fn split(self) -> (Consignment<TRANSFER>, validation::Status) {
         (self.consignment, self.validation_status)
@@ -137,7 +153,9 @@ impl<const TRANSFER: bool> ValidConsignment<TRANSFER> {
 impl<const TRANSFER: bool> Deref for ValidConsignment<TRANSFER> {
     type Target = Consignment<TRANSFER>;
 
-    fn deref(&self) -> &Self::Target { &self.consignment }
+    fn deref(&self) -> &Self::Target {
+        &self.consignment
+    }
 }
 
 /// Consignment represents contract-specific data, always starting with genesis,
@@ -243,13 +261,19 @@ impl<const TRANSFER: bool> CommitEncode for Consignment<TRANSFER> {
 
 impl<const TRANSFER: bool> Consignment<TRANSFER> {
     #[inline]
-    pub fn consignment_id(&self) -> ConsignmentId { self.commit_id() }
+    pub fn consignment_id(&self) -> ConsignmentId {
+        self.commit_id()
+    }
 
     #[inline]
-    pub fn schema_id(&self) -> SchemaId { self.schema.schema_id() }
+    pub fn schema_id(&self) -> SchemaId {
+        self.schema.schema_id()
+    }
 
     #[inline]
-    pub fn contract_id(&self) -> ContractId { self.genesis.contract_id() }
+    pub fn contract_id(&self) -> ContractId {
+        self.genesis.contract_id()
+    }
 
     pub fn terminal_secrets(&self) -> impl Iterator<Item = (BundleId, XChain<SecretSeal>)> {
         self.terminals
@@ -385,7 +409,9 @@ impl<const TRANSFER: bool> StrictArmor for Consignment<TRANSFER> {
     type Id = ConsignmentId;
     const PLATE_TITLE: &'static str = "RGB CONSIGNMENT";
 
-    fn armor_id(&self) -> Self::Id { self.commit_id() }
+    fn armor_id(&self) -> Self::Id {
+        self.commit_id()
+    }
     fn armor_headers(&self) -> Vec<ArmorHeader> {
         let mut headers = vec![
             ArmorHeader::new(ASCII_ARMOR_VERSION, self.version.to_string()),

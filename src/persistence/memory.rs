@@ -76,7 +76,9 @@ impl StrictSerialize for MemStash {}
 impl StrictDeserialize for MemStash {}
 
 impl MemStash {
-    pub fn new() -> Self { MemStash::default() }
+    pub fn new() -> Self {
+        MemStash::default()
+    }
 }
 
 impl StashProvider for MemStash {}
@@ -85,7 +87,9 @@ impl StashReadProvider for MemStash {
     // With in-memory data we have no connectivity or I/O errors
     type Error = Infallible;
 
-    fn type_system(&self) -> Result<&TypeSystem, Self::Error> { Ok(&self.type_system) }
+    fn type_system(&self) -> Result<&TypeSystem, Self::Error> {
+        Ok(&self.type_system)
+    }
 
     fn lib(&self, id: LibId) -> Result<&Lib, StashProviderError<Self::Error>> {
         self.libs
@@ -208,14 +212,17 @@ impl StashReadProvider for MemStash {
             .witnesses
             .iter()
             .filter_map(|(witness_id, witness)| match &witness.anchors {
-                AnchorSet::Tapret(anchor) |
-                AnchorSet::Double {
+                AnchorSet::Tapret(anchor)
+                | AnchorSet::Double {
                     tapret: anchor,
                     opret: _,
-                } => Some((*witness_id, TapretCommitment {
-                    mpc: anchor.mpc_proof.commit_id(),
-                    nonce: anchor.dbc_proof.path_proof.nonce(),
-                })),
+                } => Some((
+                    *witness_id,
+                    TapretCommitment {
+                        mpc: anchor.mpc_proof.commit_id(),
+                        nonce: anchor.dbc_proof.path_proof.nonce(),
+                    },
+                )),
                 _ => None,
             }))
     }
@@ -349,7 +356,9 @@ impl StashWriteProvider for MemStash {
 //////////
 
 impl From<confinement::Error> for StateUpdateError<confinement::Error> {
-    fn from(err: confinement::Error) -> Self { StateUpdateError::Connectivity(err) }
+    fn from(err: confinement::Error) -> Self {
+        StateUpdateError::Connectivity(err)
+    }
 }
 
 #[derive(Getters, Clone, Debug, Default)]
@@ -364,7 +373,9 @@ impl StrictSerialize for MemState {}
 impl StrictDeserialize for MemState {}
 
 impl MemState {
-    pub fn new() -> Self { MemState::default() }
+    pub fn new() -> Self {
+        MemState::default()
+    }
 }
 
 impl StateProvider for MemState {}
@@ -414,11 +425,15 @@ impl StateWriteProvider for MemState {
 //////////
 
 impl From<confinement::Error> for IndexReadError<confinement::Error> {
-    fn from(err: confinement::Error) -> Self { IndexReadError::Connectivity(err) }
+    fn from(err: confinement::Error) -> Self {
+        IndexReadError::Connectivity(err)
+    }
 }
 
 impl From<confinement::Error> for IndexWriteError<confinement::Error> {
-    fn from(err: confinement::Error) -> Self { IndexWriteError::Connectivity(err) }
+    fn from(err: confinement::Error) -> Self {
+        IndexWriteError::Connectivity(err)
+    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -450,7 +465,9 @@ impl StrictSerialize for MemIndex {}
 impl StrictDeserialize for MemIndex {}
 
 impl MemIndex {
-    pub fn new() -> Self { MemIndex::default() }
+    pub fn new() -> Self {
+        MemIndex::default()
+    }
 }
 
 impl IndexProvider for MemIndex {}

@@ -118,7 +118,9 @@ pub enum ContentId {
 pub struct SigBlob(NonEmptyBlob<4096>);
 
 impl Default for SigBlob {
-    fn default() -> Self { SigBlob(NonEmptyBlob::with(0)) }
+    fn default() -> Self {
+        SigBlob(NonEmptyBlob::with(0))
+    }
 }
 
 #[derive(Wrapper, WrapperMut, Clone, PartialEq, Eq, Hash, Debug, From)]
@@ -139,5 +141,7 @@ impl IntoIterator for ContentSigs {
     type Item = (Identity, SigBlob);
     type IntoIter = btree_map::IntoIter<Identity, SigBlob>;
 
-    fn into_iter(self) -> Self::IntoIter { self.0.into_iter() }
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
 }
