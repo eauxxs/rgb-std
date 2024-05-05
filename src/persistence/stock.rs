@@ -28,11 +28,11 @@ use std::fmt::Debug;
 
 use amplify::confinement::{Confined, U24};
 use amplify::Wrapper;
-use bp::seals::txout::CloseMethod;
+use bp::seals::txout::{BlindSeal, CloseMethod, TxPtr};
 use bp::Vout;
 use chrono::Utc;
 use commit_verify::Conceal;
-use invoice::{Amount, Beneficiary, InvoiceState, NonFungible, RgbInvoice};
+use invoice::{Amount, Beneficiary, InvoiceState, RgbInvoice};
 use rgb::{
     validation, AssignmentType, BlindingFactor, BundleId, ContractHistory, ContractId,
     ContractState, DbcProof, EAnchor, GraphSeal, Identity, OpId, Operation, Opout, SchemaId,
@@ -173,19 +173,25 @@ pub enum ConsignError {
 impl<S: StashProvider, H: StateProvider, P: IndexProvider> From<ConsignError>
     for StockError<S, H, P, ConsignError>
 {
-    fn from(err: ConsignError) -> Self { Self::InvalidInput(err) }
+    fn from(err: ConsignError) -> Self {
+        Self::InvalidInput(err)
+    }
 }
 
 impl<S: StashProvider, H: StateProvider, P: IndexProvider> From<MergeRevealError>
     for StockError<S, H, P, ConsignError>
 {
-    fn from(err: MergeRevealError) -> Self { Self::InvalidInput(err.into()) }
+    fn from(err: MergeRevealError) -> Self {
+        Self::InvalidInput(err.into())
+    }
 }
 
 impl<S: StashProvider, H: StateProvider, P: IndexProvider> From<RevealError>
     for StockError<S, H, P, ConsignError>
 {
-    fn from(err: RevealError) -> Self { Self::InvalidInput(err.into()) }
+    fn from(err: RevealError) -> Self {
+        Self::InvalidInput(err.into())
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Display, Error, From)]
@@ -231,13 +237,17 @@ pub enum ComposeError {
 impl<S: StashProvider, H: StateProvider, P: IndexProvider> From<ComposeError>
     for StockError<S, H, P, ComposeError>
 {
-    fn from(err: ComposeError) -> Self { Self::InvalidInput(err) }
+    fn from(err: ComposeError) -> Self {
+        Self::InvalidInput(err)
+    }
 }
 
 impl<S: StashProvider, H: StateProvider, P: IndexProvider> From<BuilderError>
     for StockError<S, H, P, ComposeError>
 {
-    fn from(err: BuilderError) -> Self { Self::InvalidInput(err.into()) }
+    fn from(err: BuilderError) -> Self {
+        Self::InvalidInput(err.into())
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Display, Error, From)]
@@ -250,7 +260,9 @@ pub enum FasciaError {
 impl<S: StashProvider, H: StateProvider, P: IndexProvider> From<FasciaError>
     for StockError<S, H, P, FasciaError>
 {
-    fn from(err: FasciaError) -> Self { Self::InvalidInput(err) }
+    fn from(err: FasciaError) -> Self {
+        Self::InvalidInput(err)
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Display, Error, From)]
@@ -264,7 +276,9 @@ pub enum ContractIfaceError {
 impl<S: StashProvider, H: StateProvider, P: IndexProvider> From<ContractIfaceError>
     for StockError<S, H, P, ContractIfaceError>
 {
-    fn from(err: ContractIfaceError) -> Self { Self::InvalidInput(err) }
+    fn from(err: ContractIfaceError) -> Self {
+        Self::InvalidInput(err)
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Display, Error, From)]
@@ -306,19 +320,29 @@ macro_rules! stock_err_conv {
 }
 
 impl From<Infallible> for InputError {
-    fn from(_: Infallible) -> Self { unreachable!() }
+    fn from(_: Infallible) -> Self {
+        unreachable!()
+    }
 }
 impl From<Infallible> for ComposeError {
-    fn from(_: Infallible) -> Self { unreachable!() }
+    fn from(_: Infallible) -> Self {
+        unreachable!()
+    }
 }
 impl From<Infallible> for ConsignError {
-    fn from(_: Infallible) -> Self { unreachable!() }
+    fn from(_: Infallible) -> Self {
+        unreachable!()
+    }
 }
 impl From<Infallible> for FasciaError {
-    fn from(_: Infallible) -> Self { unreachable!() }
+    fn from(_: Infallible) -> Self {
+        unreachable!()
+    }
 }
 impl From<Infallible> for ContractIfaceError {
-    fn from(_: Infallible) -> Self { unreachable!() }
+    fn from(_: Infallible) -> Self {
+        unreachable!()
+    }
 }
 
 stock_err_conv!(Infallible, ComposeError);
@@ -370,11 +394,17 @@ impl<S: StashProvider, H: StateProvider, P: IndexProvider> Stock<S, H, P> {
     }
 
     #[doc(hidden)]
-    pub fn as_stash_provider(&self) -> &S { self.stash.as_provider() }
+    pub fn as_stash_provider(&self) -> &S {
+        self.stash.as_provider()
+    }
     #[doc(hidden)]
-    pub fn as_state_provider(&self) -> &H { &self.state }
+    pub fn as_state_provider(&self) -> &H {
+        &self.state
+    }
     #[doc(hidden)]
-    pub fn as_index_provider(&self) -> &P { self.index.as_provider() }
+    pub fn as_index_provider(&self) -> &P {
+        self.index.as_provider()
+    }
 
     pub fn ifaces(&self) -> Result<impl Iterator<Item = IfaceInfo> + '_, StockError<S, H, P>> {
         let names = self
@@ -679,7 +709,12 @@ impl<S: StashProvider, H: StateProvider, P: IndexProvider> Stock<S, H, P> {
                 for index in 0..typed_assignments.len_u16() {
                     let seal = typed_assignments.to_confidential_seals()[index as usize];
                     if secret_seals.contains(&seal) {
-                        terminals.insert(bundle_id, Terminal::new(seal.map(TerminalSeal::from)));
+                        terminals
+                            .entry(bundle_id)
+                            .or_insert(Terminal::new(seal.map(TerminalSeal::from)))
+                            .seals
+                            .push(seal.map(TerminalSeal::from))
+                            .map_err(|_| ConsignError::TooManyTerminals)?;
                     } else if opout.no == index && opout.ty == *type_id {
                         if let Some(seal) = typed_assignments
                             .revealed_seal_at(index)
@@ -777,10 +812,10 @@ impl<S: StashProvider, H: StateProvider, P: IndexProvider> Stock<S, H, P> {
     #[allow(clippy::result_large_err)]
     pub fn compose(
         &self,
-        invoice: &RgbInvoice,
+        invoice: &[RgbInvoice],
         prev_outputs: impl IntoIterator<Item = impl Into<XOutputSeal>>,
         method: CloseMethod,
-        beneficiary_vout: Option<impl Into<Vout>>,
+        beneficiary_vout: HashSet<Option<impl Into<Vout>>>,
         allocator: impl Fn(ContractId, AssignmentType, VelocityHint) -> Option<Vout>,
     ) -> Result<Batch, StockError<S, H, P, ComposeError>> {
         self.compose_deterministic(
@@ -800,15 +835,39 @@ impl<S: StashProvider, H: StateProvider, P: IndexProvider> Stock<S, H, P> {
     #[allow(clippy::too_many_arguments, clippy::result_large_err)]
     pub fn compose_deterministic(
         &self,
-        invoice: &RgbInvoice,
+        invoices: &[RgbInvoice],
         prev_outputs: impl IntoIterator<Item = impl Into<XOutputSeal>>,
         method: CloseMethod,
-        beneficiary_vout: Option<impl Into<Vout>>,
+        beneficiary_vout: HashSet<Option<impl Into<Vout>>>,
         allocator: impl Fn(ContractId, AssignmentType, VelocityHint) -> Option<Vout>,
         pedersen_blinder: impl Fn(ContractId, AssignmentType) -> BlindingFactor,
         seal_blinder: impl Fn(ContractId, AssignmentType) -> u64,
     ) -> Result<Batch, StockError<S, H, P, ComposeError>> {
-        let layer1 = invoice.layer1();
+        assert!(!invoices.is_empty());
+        assert!(beneficiary_vout.iter().all(|vout| vout.is_none()));
+        let beneficiary_vout: Option<Vout> = None;
+        let iface = invoices
+            .iter()
+            .map(|i| i.iface.as_ref().clone().unwrap())
+            .reduce(|acc, a| {
+                if acc != a {
+                    unimplemented!("different iface in invoices");
+                }
+                a
+            })
+            .unwrap();
+
+        let layer1 = invoices
+            .iter()
+            .map(|i| i.layer1())
+            .reduce(|acc, a| {
+                if acc != a {
+                    unimplemented!("different layer in invoices");
+                }
+                a
+            })
+            .unwrap();
+
         let prev_outputs = prev_outputs
             .into_iter()
             .map(|o| o.into())
@@ -842,109 +901,127 @@ impl<S: StashProvider, H: StateProvider, P: IndexProvider> Stock<S, H, P> {
             };
 
         // 1. Prepare the data
-        if let Some(expiry) = invoice.expiry {
-            if expiry < Utc::now().timestamp() {
-                return Err(ComposeError::InvoiceExpired.into());
-            }
-        }
-        let contract_id = invoice.contract.ok_or(ComposeError::NoContract)?;
-        let iface = invoice.iface.as_ref().ok_or(ComposeError::NoIface)?;
-        let mut main_builder =
-            self.transition_builder(contract_id, iface.clone(), invoice.operation.clone())?;
-        let assignment_name = invoice
-            .assignment
-            .as_ref()
-            .or_else(|| main_builder.default_assignment().ok())
-            .ok_or(BuilderError::NoDefaultAssignment)?
-            .clone();
-        let assignment_id = main_builder
-            .assignments_type(&assignment_name)
-            .ok_or(BuilderError::InvalidStateField(assignment_name.clone()))?;
-
-        let layer1 = invoice.beneficiary.chain_network().layer1();
-        let beneficiary = match (invoice.beneficiary.into_inner(), beneficiary_vout) {
-            (Beneficiary::BlindedSeal(seal), _) => {
-                BuilderSeal::Concealed(XChain::with(layer1, seal))
-            }
-            (Beneficiary::WitnessVout(_), Some(vout)) => BuilderSeal::Revealed(XChain::with(
-                layer1,
-                GraphSeal::with_blinded_vout(
-                    method,
-                    vout,
-                    seal_blinder(contract_id, assignment_id),
-                ),
-            )),
-            (Beneficiary::WitnessVout(_), None) => {
-                return Err(ComposeError::NoBeneficiaryOutput.into());
-            }
-        };
-
-        // 2. Prepare transition
-        let mut main_inputs = Vec::<XOutputSeal>::new();
-        let mut sum_inputs = Amount::ZERO;
-        let mut data_inputs = vec![];
-        for (output, list) in
-            self.contract_assignments_for(contract_id, prev_outputs.iter().copied())?
-        {
-            main_inputs.push(output);
-            for (opout, mut state) in list {
-                main_builder = main_builder.add_input(opout, state.clone())?;
-                if opout.ty != assignment_id {
-                    let seal = output_for_assignment(contract_id, opout.ty)?;
-                    state.update_blinding(pedersen_blinder(contract_id, assignment_id));
-                    main_builder = main_builder.add_owned_state_raw(opout.ty, seal, state)?;
-                } else if let PersistedState::Amount(value, _, _) = state {
-                    sum_inputs += value;
-                } else if let PersistedState::Data(value, _) = state {
-                    data_inputs.push(value);
+        let now = Utc::now().timestamp();
+        for i in invoices {
+            if let Some(expiry) = i.expiry {
+                if expiry < now {
+                    return Err(ComposeError::InvoiceExpired.into());
                 }
             }
         }
-        // Add change
-        let main_transition = match invoice.owned_state.clone() {
-            InvoiceState::Amount(amt) => {
-                match sum_inputs.cmp(&amt) {
-                    Ordering::Greater => {
-                        let seal = output_for_assignment(contract_id, assignment_id)?;
-                        main_builder = main_builder.add_fungible_state_raw(
+
+        let mut invoice_map: HashMap<ContractId, Vec<&RgbInvoice>> = Default::default();
+        for i in invoices {
+            let contract_id = i.contract.ok_or(ComposeError::NoContract)?;
+            invoice_map.entry(contract_id).or_default().push(i);
+        }
+
+        let mut change_contract_id = HashSet::<ContractId>::new();
+        let mut mains = vec![];
+        for (contract_id, invoices) in invoice_map {
+            change_contract_id.insert(contract_id);
+            // let iface = invoice.iface.as_ref().ok_or(ComposeError::NoIface)?;
+            let mut main_builder =
+                self.transition_builder(contract_id, iface.clone(), invoices[0].operation.clone())?;
+            let assignment_name = invoices[0]
+                .assignment
+                .as_ref()
+                .or_else(|| main_builder.default_assignment().ok())
+                .ok_or(BuilderError::NoDefaultAssignment)?
+                .clone();
+            let assignment_id = main_builder
+                .assignments_type(&assignment_name)
+                .ok_or(BuilderError::InvalidStateField(assignment_name.clone()))?;
+
+            let get_amount = |invoice: &RgbInvoice| match invoice.owned_state {
+                InvoiceState::Amount(amt) => amt,
+                _ => unimplemented!("only TypedState::Amount is currently supported"),
+            };
+            //
+            let beneficiarys = invoices
+                .into_iter()
+                .map(|invoice| {
+                    match (invoice.beneficiary.into_inner(), beneficiary_vout, get_amount(invoice))
+                    {
+                        (Beneficiary::BlindedSeal(seal), _, amount) => {
+                            (BuilderSeal::Concealed(XChain::with(layer1, seal)), amount)
+                        }
+                        (Beneficiary::WitnessVout(_), Some(vout), amount) => (
+                            BuilderSeal::Revealed(XChain::with(
+                                layer1,
+                                GraphSeal::with_blinded_vout(
+                                    method,
+                                    vout,
+                                    seal_blinder(contract_id, assignment_id),
+                                ),
+                            )),
+                            amount,
+                        ),
+                        (Beneficiary::WitnessVout(_), None, _) => {
+                            // return Err(ComposeError::NoBeneficiaryOutput.into());
+                            unimplemented!("NoBeneficiaryOutput");
+                        }
+                    }
+                })
+                .collect::<HashMap<BuilderSeal<BlindSeal<TxPtr>>, Amount>>();
+
+            // 2. Prepare transition
+            let mut main_inputs = HashSet::<XOutputSeal>::new();
+            let mut sum_inputs = Amount::ZERO;
+            let mut data_inputs = vec![];
+            for (output, list) in
+                self.contract_assignments_for(contract_id, prev_outputs.iter().copied())?
+            {
+                main_inputs.insert(output);
+                for (opout, mut state) in list {
+                    main_builder = main_builder.add_input(opout, state.clone())?;
+                    if opout.ty != assignment_id {
+                        let seal = output_for_assignment(contract_id, opout.ty)?;
+                        state.update_blinding(pedersen_blinder(contract_id, assignment_id));
+                        main_builder = main_builder.add_owned_state_raw(opout.ty, seal, state)?;
+                    } else if let PersistedState::Amount(value, _, _) = state {
+                        sum_inputs += value;
+                    } else if let PersistedState::Data(value, _) = state {
+                        data_inputs.push(value);
+                    }
+                }
+            }
+            let out_sum = beneficiarys.values().map(|x| *x).sum::<Amount>();
+
+            for (beneficiary, amount) in beneficiarys {
+                main_builder = main_builder.add_fungible_state_raw(
+                    assignment_id,
+                    beneficiary,
+                    amount,
+                    pedersen_blinder(contract_id, assignment_id),
+                )?;
+            }
+            // Add change
+            let main_transition = match sum_inputs.cmp(&out_sum) {
+                Ordering::Greater => {
+                    let seal = output_for_assignment(contract_id, assignment_id)?;
+                    main_builder
+                        .add_fungible_state_raw(
                             assignment_id,
                             seal,
-                            sum_inputs - amt,
+                            sum_inputs - out_sum,
                             pedersen_blinder(contract_id, assignment_id),
-                        )?;
-                    }
-                    Ordering::Less => return Err(ComposeError::InsufficientState.into()),
-                    Ordering::Equal => {}
+                        )
+                        .unwrap()
+                        .complete_transition()
+                        .unwrap()
                 }
-                main_builder
-                    .add_fungible_state_raw(
-                        assignment_id,
-                        beneficiary,
-                        amt,
-                        pedersen_blinder(contract_id, assignment_id),
-                    )?
-                    .complete_transition()?
-            }
-            InvoiceState::Data(data) => match data {
-                NonFungible::RGB21(allocation) => {
-                    if !data_inputs.into_iter().any(|x| x == allocation.into()) {
-                        return Err(ComposeError::InsufficientState.into());
-                    }
+                Ordering::Less => return Err(ComposeError::InsufficientState.into()),
+                Ordering::Equal => {
+                    unreachable!()
+                }
+            };
 
-                    main_builder
-                        .add_data_raw(
-                            assignment_id,
-                            beneficiary,
-                            allocation,
-                            seal_blinder(contract_id, assignment_id),
-                        )?
-                        .complete_transition()?
-                }
-            },
-            _ => {
-                todo!("only TypedState::Amount and TypedState::Allocation are currently supported")
-            }
-        };
+            let main =
+                TransitionInfo::new(main_transition, main_inputs.into_iter().collect::<Vec<_>>())
+                    .map_err(|_| ComposeError::TooManyInputs)?;
+            mains.push(main);
+        }
 
         // 3. Prepare other transitions
         // Enumerate state
@@ -952,9 +1029,10 @@ impl<S: StashProvider, H: StateProvider, P: IndexProvider> Stock<S, H, P> {
             HashMap::<ContractId, HashMap<XOutputSeal, HashMap<Opout, PersistedState>>>::new();
         for id in self.contracts_assigning(prev_outputs.iter().copied())? {
             // Skip current contract
-            if id == contract_id {
+            if change_contract_id.contains(&id) {
                 continue;
             }
+
             let state = self.contract_assignments_for(id, prev_outputs.iter().copied())?;
             let entry = spent_state.entry(id).or_default();
             for (seal, assigns) in state {
@@ -982,10 +1060,13 @@ impl<S: StashProvider, H: StateProvider, P: IndexProvider> Stock<S, H, P> {
                 .map_err(|_| ComposeError::TooManyInputs)?;
             blanks.push(info).map_err(|_| ComposeError::TooManyBlanks)?;
         }
-
-        let main = TransitionInfo::new(main_transition, main_inputs)
-            .map_err(|_| ComposeError::TooManyInputs)?;
-        Ok(Batch { main, blanks })
+        for i in mains.split_off(1) {
+            blanks.push(i).map_err(|_| ComposeError::TooManyBlanks)?;
+        }
+        Ok(Batch {
+            main: mains.pop().unwrap(),
+            blanks,
+        })
     }
 
     pub fn import_kit(&mut self, kit: ValidKit) -> Result<validation::Status, StockError<S, H, P>> {

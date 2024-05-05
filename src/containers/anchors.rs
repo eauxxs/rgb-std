@@ -57,7 +57,9 @@ impl SealWitness {
         }
     }
 
-    pub fn witness_id(&self) -> XWitnessId { self.public.to_witness_id() }
+    pub fn witness_id(&self) -> XWitnessId {
+        self.public.to_witness_id()
+    }
 }
 
 pub type XPubWitness = XChain<PubWitness>;
@@ -67,7 +69,9 @@ pub trait ToWitnessId {
 }
 
 impl ToWitnessId for XPubWitness {
-    fn to_witness_id(&self) -> XWitnessId { self.map_ref(|w| w.txid) }
+    fn to_witness_id(&self) -> XWitnessId {
+        self.map_ref(|w| w.txid)
+    }
 }
 
 impl MergeReveal for XPubWitness {
@@ -77,8 +81,8 @@ impl MergeReveal for XPubWitness {
                 one.merge_reveal(two).map(XChain::Bitcoin)
             }
             (XChain::Liquid(one), XChain::Liquid(two)) => one.merge_reveal(two).map(XChain::Liquid),
-            (XChain::Bitcoin(bitcoin), XChain::Liquid(liquid)) |
-            (XChain::Liquid(liquid), XChain::Bitcoin(bitcoin)) => {
+            (XChain::Bitcoin(bitcoin), XChain::Liquid(liquid))
+            | (XChain::Liquid(liquid), XChain::Bitcoin(bitcoin)) => {
                 Err(MergeRevealError::ChainMismatch {
                     bitcoin: bitcoin.txid,
                     liquid: liquid.txid,
@@ -104,15 +108,21 @@ pub struct PubWitness {
 }
 
 impl PartialEq for PubWitness {
-    fn eq(&self, other: &Self) -> bool { self.txid == other.txid }
+    fn eq(&self, other: &Self) -> bool {
+        self.txid == other.txid
+    }
 }
 
 impl Ord for PubWitness {
-    fn cmp(&self, other: &Self) -> Ordering { self.txid.cmp(&other.txid) }
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.txid.cmp(&other.txid)
+    }
 }
 
 impl PartialOrd for PubWitness {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> { Some(self.cmp(other)) }
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 impl PubWitness {
@@ -186,23 +196,33 @@ pub struct BundledWitness<P: mpc::Proof + StrictDumb = mpc::MerkleProof> {
 }
 
 impl<P: mpc::Proof + StrictDumb> PartialEq for BundledWitness<P> {
-    fn eq(&self, other: &Self) -> bool { self.pub_witness == other.pub_witness }
+    fn eq(&self, other: &Self) -> bool {
+        self.pub_witness == other.pub_witness
+    }
 }
 
 impl<P: mpc::Proof + StrictDumb> Ord for BundledWitness<P> {
-    fn cmp(&self, other: &Self) -> Ordering { self.pub_witness.cmp(&other.pub_witness) }
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.pub_witness.cmp(&other.pub_witness)
+    }
 }
 
 impl<P: mpc::Proof + StrictDumb> PartialOrd for BundledWitness<P> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> { Some(self.cmp(other)) }
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 impl<P: mpc::Proof + StrictDumb> BundledWitness<P> {
-    pub fn bundles(&self) -> vec::IntoIter<&TransitionBundle> { self.anchored_bundles.bundles() }
+    pub fn bundles(&self) -> vec::IntoIter<&TransitionBundle> {
+        self.anchored_bundles.bundles()
+    }
 }
 
 impl BundledWitness<mpc::MerkleProof> {
-    pub fn witness_id(&self) -> XWitnessId { self.pub_witness.to_witness_id() }
+    pub fn witness_id(&self) -> XWitnessId {
+        self.pub_witness.to_witness_id()
+    }
 
     pub(crate) fn disclose(&self) -> BundledWitnessDisclosure {
         let mut pairs = self.anchored_bundles.pairs();
@@ -217,7 +237,9 @@ impl BundledWitness<mpc::MerkleProof> {
         }
     }
 
-    pub fn disclose_hash(&self) -> DiscloseHash { self.disclose().commit_id() }
+    pub fn disclose_hash(&self) -> DiscloseHash {
+        self.disclose().commit_id()
+    }
 }
 
 impl BundledWitness {
@@ -249,7 +271,9 @@ pub enum AnchorSet {
 }
 
 impl StrictDumb for AnchorSet {
-    fn strict_dumb() -> Self { Self::Opret(strict_dumb!()) }
+    fn strict_dumb() -> Self {
+        Self::Opret(strict_dumb!())
+    }
 }
 
 impl AnchorSet {
@@ -267,25 +291,29 @@ impl AnchorSet {
             .map(|msg| BundleId::from_byte_array(msg.to_byte_array()))
     }
 
-    pub fn has_tapret(&self) -> bool { matches!(self, Self::Tapret(_) | Self::Double { .. }) }
+    pub fn has_tapret(&self) -> bool {
+        matches!(self, Self::Tapret(_) | Self::Double { .. })
+    }
 
-    pub fn has_opret(&self) -> bool { matches!(self, Self::Opret(_) | Self::Double { .. }) }
+    pub fn has_opret(&self) -> bool {
+        matches!(self, Self::Opret(_) | Self::Double { .. })
+    }
 
     pub fn merge_reveal(self, other: Self) -> Result<Self, anchor::MergeError> {
         match (self, other) {
             (Self::Tapret(anchor), Self::Tapret(a)) => Ok(Self::Tapret(anchor.merge_reveal(a)?)),
             (Self::Opret(anchor), Self::Opret(a)) => Ok(Self::Opret(anchor.merge_reveal(a)?)),
-            (Self::Tapret(tapret), Self::Opret(opret)) |
-            (Self::Opret(opret), Self::Tapret(tapret)) => Ok(Self::Double { tapret, opret }),
+            (Self::Tapret(tapret), Self::Opret(opret))
+            | (Self::Opret(opret), Self::Tapret(tapret)) => Ok(Self::Double { tapret, opret }),
 
-            (Self::Double { tapret, opret }, Self::Tapret(t)) |
-            (Self::Tapret(t), Self::Double { tapret, opret }) => Ok(Self::Double {
+            (Self::Double { tapret, opret }, Self::Tapret(t))
+            | (Self::Tapret(t), Self::Double { tapret, opret }) => Ok(Self::Double {
                 tapret: tapret.merge_reveal(t)?,
                 opret,
             }),
 
-            (Self::Double { tapret, opret }, Self::Opret(o)) |
-            (Self::Opret(o), Self::Double { tapret, opret }) => Ok(Self::Double {
+            (Self::Double { tapret, opret }, Self::Opret(o))
+            | (Self::Opret(o), Self::Double { tapret, opret }) => Ok(Self::Double {
                 tapret,
                 opret: opret.merge_reveal(o)?,
             }),
@@ -326,7 +354,9 @@ pub enum AnchoredBundles<P: mpc::Proof + StrictDumb = mpc::MerkleProof> {
 }
 
 impl<P: mpc::Proof + StrictDumb> StrictDumb for AnchoredBundles<P> {
-    fn strict_dumb() -> Self { Self::Opret(strict_dumb!(), strict_dumb!()) }
+    fn strict_dumb() -> Self {
+        Self::Opret(strict_dumb!(), strict_dumb!())
+    }
 }
 
 impl<P: mpc::Proof + StrictDumb> AnchoredBundles<P> {
@@ -337,12 +367,18 @@ impl<P: mpc::Proof + StrictDumb> AnchoredBundles<P> {
         }
     }
 
-    pub fn has_tapret(&self) -> bool { matches!(self, Self::Tapret(..) | Self::Double { .. }) }
+    pub fn has_tapret(&self) -> bool {
+        matches!(self, Self::Tapret(..) | Self::Double { .. })
+    }
 
-    pub fn has_opret(&self) -> bool { matches!(self, Self::Opret(..) | Self::Double { .. }) }
+    pub fn has_opret(&self) -> bool {
+        matches!(self, Self::Opret(..) | Self::Double { .. })
+    }
 
     pub fn pairs(&self) -> vec::IntoIter<(EAnchor<P>, &TransitionBundle)>
-    where P: Clone {
+    where
+        P: Clone,
+    {
         match self {
             AnchoredBundles::Tapret(anchor, bundle) => {
                 let anchor = anchor.clone();
@@ -457,8 +493,8 @@ impl AnchoredBundles {
             (
                 AnchoredBundles::Tapret(tapret_anchor, tapret_bundle),
                 AnchoredBundles::Opret(opret_anchor, opret_bundle),
-            ) |
-            (
+            )
+            | (
                 AnchoredBundles::Opret(opret_anchor, opret_bundle),
                 AnchoredBundles::Tapret(tapret_anchor, tapret_bundle),
             ) => Ok(AnchoredBundles::Double {
@@ -476,8 +512,8 @@ impl AnchoredBundles {
                     opret_bundle,
                 },
                 AnchoredBundles::Tapret(t, bundle),
-            ) |
-            (
+            )
+            | (
                 AnchoredBundles::Tapret(t, bundle),
                 AnchoredBundles::Double {
                     tapret_anchor,
@@ -500,8 +536,8 @@ impl AnchoredBundles {
                     opret_bundle,
                 },
                 AnchoredBundles::Opret(o, bundle),
-            ) |
-            (
+            )
+            | (
                 AnchoredBundles::Opret(o, bundle),
                 AnchoredBundles::Double {
                     tapret_anchor,
